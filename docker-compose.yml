@@ -1,20 +1,15 @@
-version: '3'
-
+version: "3"
 services:
-  app:
-    build: .
-    container_name: ref-app
-    command: npm run dev
-    #network_mode: host
+  referee:
+    image: referee:latest
+    restart: no
     ports:
       - 3030:3030
     volumes:
-      - .:/home/app
-      - /home/app/server/node_modules
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./database:/home/app/server/db/database
     environment:
       DOCKER_RUNNING: true
-      HOST_IP: 192.168.178.45
-      SECRET: xyz
-      FETCH_INTERVAL: 10000
-      VPORTAL_URL: dev
+      HOST_IP: 192.168.178.42
+      SECRET: password
+      FETCH_INTERVAL: 2000
+      VPORTAL_URL: bvdk
