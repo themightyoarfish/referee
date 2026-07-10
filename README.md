@@ -180,21 +180,21 @@ Find your LAN IP:
 ### 3. Start
 
 ```bash
-docker compose up -d
+docker compose up
 ```
 
 Open **[http://localhost:3030](http://localhost:3030)** (or `http://<HOST_IP>:3030` from another device on the LAN).
 
 ### 4. Build from source (optional)
 
-If you prefer a local image instead of pulling from GitHub Container Registry:
+If you prefer a local image instead of pulling from GitHub Container Registry (or you get an authorization error):
 
 ```bash
 git clone https://github.com/franknitschke/referee.git
 cd referee
 docker build -t referee:latest .
-# then set image: referee:latest in docker-compose.yml
-docker compose up -d
+# then set image: `referee:latest` in docker-compose.yml
+docker compose up 
 ```
 
 ---

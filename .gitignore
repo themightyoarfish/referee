@@ -44,6 +44,7 @@ jspm_packages/
 
 # Database
 server/db/database/
+database/
 
 .DS_Store
 
