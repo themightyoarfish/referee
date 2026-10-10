@@ -6,12 +6,14 @@ import Light from '../components/Light';
 import Attempt from '../components/Attempt';
 
 import { showRating, checkRatingSubmit } from '../helper/helper';
+import RefQrCodes from '../components/RefQrCodes';
 
 type Props = {
   ip: null | string;
   isConnected: boolean;
   rating: RatingObject;
   settings: SettingsObject;
+  judgeLinks: Partial<Record<RatingKeys, string>> | null;
   competitionData: {
     weight: string;
     discipline: string;
@@ -29,7 +31,10 @@ function Display({
   ip,
   settings,
   competitionData,
+  judgeLinks,
 }: Props) {
+  const showJudgeQr = settings?.judgeQrOnDisplay !== false;
+
   return (
     <div className='h-screen w-full bg-black text-red-600  font-semibold justify-center grid grid-cols-3 gap-2 items-center px-4 overflow-hidden cursor-none'>
       {!settings?.hideCountdown && (
@@ -66,6 +71,8 @@ function Display({
           ratingColor={rating?.right}
         />
       </div>
+
+      {showJudgeQr && <RefQrCodes judgeLinks={judgeLinks} />}
 
       {!isConnected && (
         <div className='col-span-3 absolute bottom-8 left-2 w-10/12 px-2 text-5xl text-white'>

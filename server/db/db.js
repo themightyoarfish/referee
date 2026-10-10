@@ -51,13 +51,10 @@ const doc = [
     refMenu: false,
     autoReset: true,
     autoResetTimer: 20,
+    judgeQrOnDisplay: true,
   },
 ];
 
-//Init DB if empty
-dbInit(db, doc);
-
-//migration for older DBs => check if entries missing in existing DBs
 async function migrateDB() {
   //check for new timer user
   const timer = await dbFind(db, 'position', 'timekeeper');
@@ -68,8 +65,19 @@ async function migrateDB() {
       token: '7373',
       role: 'ref',
     });
+
+  const settings = await dbGet(db, 'settings');
+  if (settings && settings.judgeQrOnDisplay === undefined) {
+    dbUpdate(db, 'settings', { judgeQrOnDisplay: true });
+  }
 }
 
-migrateDB();
+async function prepareDatabase() {
+  await dbInit(db, doc);
+  await migrateDB();
+}
 
-module.exports = { db, dbMemory };
+/** Resolves when seed data and migrations have finished (await before token rotation). */
+const dbReady = prepareDatabase();
+
+module.exports = { db, dbMemory, dbReady };

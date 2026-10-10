@@ -1,6 +1,6 @@
-version: "3"
 services:
   referee:
+    build: .
     image: referee:latest
     restart: no
     ports:
@@ -9,7 +9,7 @@ services:
       - ./database:/home/app/server/db/database
     environment:
       DOCKER_RUNNING: true
-      HOST_IP: 192.168.178.42
+      HOST_IP: 192.168.1.128
       SECRET: password
       FETCH_INTERVAL: 2000
       VPORTAL_URL: bvdk

@@ -13,6 +13,8 @@ const {
 } = require('../helper');
 
 const { getCompetitionData } = require('../vportal/getCompetitionData');
+const { getJudgeRefUrls } = require('../judgeTokens');
+const ip = require('ip');
 
 //protect routes
 router.use(middleware);
@@ -60,6 +62,11 @@ router.post('/update/ref', async (req, res) => {
   const data = await dbUpdate(db, `${id}`, payload);
   if (!data)
     return res.status(500).send({ msg: 'Es ist ein Fehler aufgetreten' });
+
+  const hostIp = process.env.HOST_IP || ip.address();
+  const port = process.env.PORT || 3030;
+  const judgeLinks = await getJudgeRefUrls(`http://${hostIp}:${port}`);
+  res.io.emit('judgeLinks', judgeLinks);
 
   res.header({ 'content-type': 'application/json' });
   res.status(200).send(data);

@@ -41,4 +41,15 @@ router.post('/admin', async function (req, res) {
   }
 });
 
+// check if a token is still valid (for the client to restore session on reload)
+router.get('/check', (req, res) => {
+  const token = req?.headers?.authorization?.split(' ')[1];
+  try {
+    jwt.verify(token, jwtSecret);
+    res.status(200).send({ valid: true });
+  } catch (err) {
+    res.status(401).send({ valid: false });
+  }
+});
+
 module.exports = router;

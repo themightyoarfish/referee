@@ -82,6 +82,23 @@ function SettingsOptions({settings, handleChange}: Props) {
               <div className='col-span-6 lg:col-span-2'>
                 <div className='form-control w-52'>
                   <label className='cursor-pointer label'>
+                    <span className='label-text'>KaRi-QR auf Display</span>
+                    <input
+                      type='checkbox'
+                      name={'judgeQrOnDisplay'}
+                      className='toggle toggle-accent'
+                      checked={settings?.judgeQrOnDisplay}
+                      onChange={handleChange}
+                    />
+                  </label>
+                  <span className='text-xs font-thin text-gray-600'>
+                    QR-Codes für Links / Haupt / Rechts auf dem Wertungsdisplay
+                  </span>
+                </div>
+              </div>
+              <div className='col-span-6 lg:col-span-2'>
+                <div className='form-control w-52'>
+                  <label className='cursor-pointer label'>
                     <span className='label-text tooltip' data-tip='Countdown auf Wertungsbildschirm ein- / ausblenden'>Timer ausblenden</span>
                     <input
                       type='checkbox'

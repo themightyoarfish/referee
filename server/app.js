@@ -12,9 +12,15 @@ const cors = require('cors');
 
 const { refValue, users } = require('./const');
 
-const { dbMemory } = require('./db/db');
+const { dbMemory, dbReady } = require('./db/db');
 const { competitionData } = require('./vportal/getCompetitionData');
-const { dbGet, cleanObject } = require('./helper');
+const { dbGet, cleanObject, dbFind } = require('./helper');
+const { rotateJudgeTokens, getJudgeRefUrls } = require('./judgeTokens');
+const {
+  registerJudgeSocket,
+  unregisterSocket,
+  isJudgePosition,
+} = require('./refSessions');
 
 const ip = require('ip');
 
@@ -55,11 +61,18 @@ app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
 });
 
+async function emitJudgeLinks(targetSocket) {
+  const baseUrl = `http://${hostIp}:${port}`;
+  const judgeLinks = await getJudgeRefUrls(baseUrl);
+  targetSocket.emit('judgeLinks', judgeLinks);
+}
+
 io.on('connection', async (socket) => {
   console.log(`🍻 a user connected ID: ${socket.id} - ${new Date()}`);
 
   //send host ip to clients
   socket.emit('ip', `http://${hostIp}:${port}`);
+  await emitJudgeLinks(socket);
 
   //send rating to connecting clients
   socket.emit('rating', cleanObject(refValue));
@@ -81,7 +94,38 @@ io.on('connection', async (socket) => {
     io.emit('getUsers', usersOnline);
   });
 
+  socket.on('getIp', () => {
+    socket.emit('ip', `http://${hostIp}:${port}`);
+  });
+
+  socket.on('getJudgeLinks', async () => {
+    await emitJudgeLinks(socket);
+  });
+
+  socket.on('refRegister', async ({ token }) => {
+    const ref = await dbFind(dbMemory, 'token', token);
+    const position = ref?.[0]?.position;
+    if (!ref || !isJudgePosition(position)) {
+      socket.emit('refRegisterFailed', {
+        msg: 'Unauthorized',
+      });
+      return;
+    }
+
+    const result = registerJudgeSocket(socket.id, position);
+    if (!result.ok) {
+      socket.emit('refRegisterFailed', {
+        msg: 'Diese Kampfrichter-Position ist bereits verbunden.',
+        position: result.position,
+      });
+      return;
+    }
+
+    socket.emit('refRegisterOk', { position });
+  });
+
   socket.on('disconnect', (reason) => {
+    unregisterSocket(socket.id);
     users.delete(socket.id);
 
     const usersOnline = Array.from(users.values());
@@ -91,10 +135,18 @@ io.on('connection', async (socket) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`listening on: http://${hostIp}:${port}`);
-  console.log(`Node Version: ${process.version}`);
-});
+dbReady
+  .then(() => rotateJudgeTokens())
+  .then(() => {
+    server.listen(port, () => {
+      console.log(`listening on: http://${hostIp}:${port}`);
+      console.log(`Node Version: ${process.version}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to prepare database or rotate judge tokens:', err);
+    process.exit(1);
+  });
 
 const socketIoObject = io;
 module.exports.ioObject = socketIoObject;

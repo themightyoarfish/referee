@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useSubmit from '../hooks/useSubmit';
+import { socket } from '../socket';
 
 type RefButtonLoginProps = {
   setToken: React.Dispatch<React.SetStateAction<string | null>>;
@@ -8,10 +9,26 @@ type RefButtonLoginProps = {
   setRef: React.Dispatch<React.SetStateAction<RefObject | null>>
 }
 
+const JUDGE_POSITIONS = new Set(['left', 'main', 'right']);
+
 function RefButtonLogin({ setToken, token, setRef }: RefButtonLoginProps) {
   const { loading, error, success, fetchData } = useSubmit();
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    function onRegisterFailed(payload: { msg?: string }) {
+      setSessionError(payload?.msg || 'Verbindung abgelehnt');
+      setRef(null);
+      localStorage.removeItem('refToken');
+    }
+
+    socket.on('refRegisterFailed', onRegisterFailed);
+    return () => {
+      socket.off('refRegisterFailed', onRegisterFailed);
+    };
+  }, [setRef]);
 
   useEffect(() => {
     if (searchParams.get('token')) {
@@ -31,8 +48,12 @@ function RefButtonLogin({ setToken, token, setRef }: RefButtonLoginProps) {
       null
     );
     if (data) {
+      setSessionError(null);
       setRef(data);
       localStorage.setItem('refToken', refToken);
+      if (JUDGE_POSITIONS.has(data.position)) {
+        socket.emit('refRegister', { token: refToken });
+      }
     }
     if (!data) localStorage.removeItem('refToken');
   }
@@ -60,6 +81,11 @@ function RefButtonLogin({ setToken, token, setRef }: RefButtonLoginProps) {
                   }}
                 />
 
+                {sessionError && (
+                  <div className='text-error text-sm text-center px-2'>
+                    {sessionError}
+                  </div>
+                )}
                 <button
                   className={`btn my-4 ${loading && 'loading'} ${
                     error && 'btn-error'

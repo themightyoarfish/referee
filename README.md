@@ -9,9 +9,9 @@ Web application for running powerlifting referee lights at a competition. Three 
 ## How it works (high level)
 
 ```
-┌─────────────────┐     QR code scan      ┌──────────────────┐
-│  Admin laptop   │ ────────────────────► │  Android phone   │
-│  /settings      │   http://IP/ref?token │  (referee app)   │
+┌─────────────────┐     QR on /display    ┌──────────────────┐
+│  Projector PC   │ ────────────────────► │  Judge phone     │
+│  /display       │   http://IP/ref?token │  (browser or app)│
 └────────┬────────┘                       └────────┬─────────┘
          │                                         │
          │  Socket.io (real-time)                  │  REST API
@@ -31,32 +31,59 @@ Web application for running powerlifting referee lights at a competition. Three 
 └─────────────────┘                     └──────────────────┘
 ```
 
-1. An **admin** logs in at `/login` and configures referee tokens in `/settings`.
-2. Each referee position gets a **QR code** encoding a URL like `http://192.168.1.10:3030/ref?token=4711`.
-3. Referees scan the code with the **Android referee app** (or open the URL in a mobile browser). The app authenticates with the token and shows colored decision buttons.
-4. When a referee taps a button, the server records the decision and **broadcasts** the updated state to every connected client (display screen, countdown, attempt board) via **Socket.io**.
-5. After all three judges have submitted, the majority decision can optionally be **sent to VPortal** and the lights **auto-reset** after a configurable delay.
+1. Start the server (Docker or Node). On each start, **new random tokens** are generated for the three judge positions (left, main, right).
+2. Open **`/display`** on the projector or competition laptop. Three **QR codes** (left, main, right) appear below the lights unless disabled in Settings.
+3. Each judge scans **their** QR code with a phone camera or the Android referee app. The link opens **`/ref?token=…`** in the mobile browser (or the app). Tokens are long random hex strings; guessing a URL is not practical.
+4. An **admin** logs in at `/login` for home, settings, and VPortal configuration. Kiosk routes (`/display`, `/countdown`, `/versuch`, `/ref`) stay available without admin login.
+5. Only **one active connection per judge position** is allowed at a time (a second device receives an error until the first disconnects).
+6. When a referee taps a button, the server records the decision and **broadcasts** the updated state to every connected client (display screen, countdown, attempt board) via **Socket.io**.
+7. After all three judges have submitted, the majority decision can optionally be **sent to VPortal** and the lights **auto-reset** after a configurable delay.
 
 ---
 
 
 
+## Web referee handsets (browser)
+
+Judges can use any modern mobile browser instead of the Android app. The flow is the same as for the app: scan a QR code, land on `/ref`, submit lights and (for the head judge) start/reset when no separate timekeeper is enabled.
+
+### Setup on competition day
+
+1. Start the server and note the LAN URL (shown on `/` after admin login, or in server logs), e.g. `http://192.168.1.10:3030`.
+2. On the **display machine**, open **`http://<HOST_IP>:3030/display`** in full screen (kiosk mode on a Raspberry Pi is described below).
+3. Confirm the three QR codes under the lights label **Links**, **Haupt**, and **Rechts**.
+4. Each judge scans only their code. After login they see the colored decision buttons (Weiß, Rot, Blau, Gelb). The head judge also sees **Start** and **Reset** when **Separater Zeitnehmer** is off in Settings.
+5. Optional: enable **Ref Menu anzeigen** in Settings if judges should see the navigation bar on `/ref`.
+
+### Tips
+
+- Phones must be on the **same Wi‑Fi / LAN** as the server.
+- If QR codes show wrong hostnames, set **`HOST_IP`** (required on macOS/Windows Docker).
+- After a **server restart**, tokens change; judges must **scan again** (new QR codes on `/display`).
+- To hide QR codes on the projector, turn off **KaRi-QR auf Display** in Settings.
+
+### Timekeeper
+
+The timekeeper role is **not** shown on the display QR row. Use the timekeeper QR in **Settings** (after admin login) or enter that token manually on `/ref`.
+
+---
+
 ## Android app interaction (QR code login)
 
-The web app does not contain the Android app source code, but it defines the contract the app uses to connect.
+The web app does not contain the Android app source code, but it defines the same contract the app uses to connect.
 
 ### What the QR code contains
 
-In **Settings**, each referee role (left, center, right, timekeeper) has a QR code. It encodes:
+On **`/display`**, each of the three judge roles has a QR code. In **Settings**, all referee roles (including timekeeper) also have QR codes. They encode:
 
 ```
 http://<HOST_IP>:<PORT>/ref?token=<REFeree_TOKEN>
 ```
 
-Example: `http://192.168.1.10:3030/ref?token=4711`
+Example: `http://192.168.1.10:3030/ref?token=a3f91c2b`
 
 - `HOST_IP` is the server’s LAN address (see environment variables below). Referee phones must reach this IP on the competition network.
-- `token` is a unique secret per role, stored in the local database.
+- `token` is a unique secret per role. For **left**, **main**, and **right**, a **new random token is generated every time the server process starts**. The timekeeper token stays in the database until changed in Settings.
 
 
 
@@ -180,8 +207,10 @@ Find your LAN IP:
 ### 3. Start
 
 ```bash
-docker compose up
+docker compose up --build
 ```
+
+Use `--build` after code changes: the image runs `npm run build` in `client/` and includes **judge token rotation on startup**. An old `referee:latest` image without that code keeps the default four-digit tokens from the database seed.
 
 Open **[http://localhost:3030](http://localhost:3030)** (or `http://<HOST_IP>:3030` from another device on the LAN).
 
@@ -301,9 +330,9 @@ cd server && npm start
 | `/display`   | **Main referee display** — lights, timer, athlete/attempt info (for projector/TV) |
 | `/countdown` | Full-screen countdown timer only                                                  |
 | `/versuch`   | Full-screen current attempt details (German route name; “attempt” in English)     |
-| `/ref`       | Referee handset UI — login via token/QR, then decision buttons                    |
+| `/ref`       | Referee handset UI — login via token/QR, then decision buttons (no admin login)   |
 | `/settings`  | Admin — tokens, QR codes, VPortal link, options (requires admin login)            |
-| `/login`     | Admin login                                                                       |
+| `/login`     | Admin login (required for `/`, `/settings`; not for kiosk or referee routes)      |
 
 
 
@@ -330,13 +359,13 @@ Change these immediately after first login.
 | Context          | Username / role | Password / token |
 | ---------------- | --------------- | ---------------- |
 | Admin (`/login`) | `admin`         | `admin`          |
-| Left judge       | —               | `4711`           |
-| Head judge       | —               | `6666`           |
-| Right judge      | —               | `6969`           |
-| Timekeeper       | —               | `7373`           |
+| Left judge       | —               | Random per server start (was `4711` on first install) |
+| Head judge       | —               | Random per server start (was `6666` on first install) |
+| Right judge      | —               | Random per server start (was `6969` on first install) |
+| Timekeeper       | —               | `7373` until changed in Settings                      |
 
 
-Admin and token values are stored in PouchDB under `server/db/database/` (or the Docker volume mount).
+Admin and token values are stored in PouchDB under `server/db/database/` (or the Docker volume mount). Judge tokens are **rotated on every server restart**; use the QR codes on `/display` or Settings for the current values.
 
 ---
 
@@ -413,7 +442,7 @@ referee/
 │   │   │   └── helper.ts       # Rating display helpers, form utilities
 │   │   └── types/
 │   │       └── global.d.ts     # Shared TypeScript types (RatingObject, SettingsObject, …)
-│   └── build/              # Production build output (served by Express)
+│   └── build/              # Production build output (gitignored; `npm run build` or Docker)
 │
 └── server/                 # Node.js backend
     ├── app.js              # Express + Socket.io setup, static file serving, connection handlers
@@ -451,6 +480,9 @@ referee/
 | Event        | Direction       | Payload                        | Purpose                                  |
 | ------------ | --------------- | ------------------------------ | ---------------------------------------- |
 | `ip`         | server → client | `http://HOST_IP:PORT`          | Show connection URL / build QR codes     |
+| `getIp`      | client → server | —                              | Request host URL if the initial `ip` was missed |
+| `judgeLinks` | server → client | `{ left, main, right }` URLs   | QR payloads for the three judges on `/display` |
+| `refRegister`| client → server | `{ token }`                    | Claim a judge slot (one device per position) |
 | `rating`     | server → client | `{ left, main, right, timer }` | Current judge lights and countdown       |
 | `settings`   | server → client | Settings object                | Sync toggles (auto-reset, VPortal, etc.) |
 | `intervall`  | server → client | Attempt array                  | Current lift/athlete from VPortal        |

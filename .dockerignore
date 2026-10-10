@@ -1,4 +1,5 @@
 client/.git
+client/build
 server/.git
 server/db/database/
 server/node_modules

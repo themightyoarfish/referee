@@ -38,6 +38,7 @@ declare global {
     sendRating: boolean;
     isDocker: boolean;
     timekeeper: boolean;
+    judgeQrOnDisplay: boolean;
   } | null;
 
   type RefObject = {
