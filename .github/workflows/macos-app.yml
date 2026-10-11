@@ -8,6 +8,7 @@ on:
       - 'server/**'
       - 'build-app.sh'
       - 'packaging/**'
+      - '.github/workflows/macos-app.yml'
   workflow_dispatch:
 
 concurrency:
@@ -26,12 +27,14 @@ jobs:
       - name: Zip app bundle
         run: ditto -c -k --sequesterRsrc --keepParent build/macos/Referee.app build/macos/Referee.app.zip
 
-      - uses: actions/upload-artifact@v4
+      # Pre-zipped with ditto; archive: false avoids GitHub wrapping it in a second zip
+      # (default upload-artifact behavior — fine for folders, confusing for .zip downloads).
+      - uses: actions/upload-artifact@v7
         with:
-          name: Referee-macos
           path: build/macos/Referee.app.zip
+          archive: false
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: referee-emergency-cleanup
           path: packaging/macos/cleanup-stale-referee.sh
