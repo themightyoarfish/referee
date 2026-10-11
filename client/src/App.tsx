@@ -122,58 +122,7 @@ function AppContent() {
     );
   }
 
-  const kioskShell =
-    location.pathname === '/display' ||
-    location.pathname === '/countdown' ||
-    location.pathname === '/versuch';
-
-  if (isPublicRoute) {
-    return (
-      <div className={kioskShell ? 'min-h-screen bg-black' : 'min-h-screen bg-gray-200'}>
-        {!['/display', '/countdown', '/versuch', '/ref'].includes(
-          location.pathname
-        ) && <Navbar location={location} settings={settings} />}
-        <Routes>
-          <Route
-            path='/ref'
-            element={
-              <Ref
-                rating={rating}
-                isConnected={isConnected}
-                settings={settings}
-              />
-            }
-          />
-          <Route
-            path='/display'
-            element={
-              <Display
-                isConnected={isConnected}
-                rating={rating}
-                ip={ip}
-                settings={settings}
-                competitionData={competitionData}
-                judgeLinks={judgeLinks}
-              />
-            }
-          />
-          <Route
-            path='/countdown'
-            element={<Countdown isConnected={isConnected} rating={rating} />}
-          />
-          <Route
-            path='/versuch'
-            element={
-              <Attempt rating={rating} competitionData={competitionData} />
-            }
-          />
-          <Route path='/login' element={<Login />} />
-        </Routes>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
+  if (!isAdmin && !isPublicRoute) {
     return (
       <div className='min-h-screen bg-gray-200'>
         <Routes>
@@ -184,63 +133,84 @@ function AppContent() {
     );
   }
 
+  const kioskShell =
+    location.pathname === '/display' ||
+    location.pathname === '/countdown' ||
+    location.pathname === '/versuch';
+
+  const shellClass = kioskShell
+    ? 'min-h-screen bg-black'
+    : 'min-h-screen bg-gray-200';
+
+  const sharedRoutes = (
+    <>
+      <Route
+        path='/ref'
+        element={
+          <Ref
+            rating={rating}
+            isConnected={isConnected}
+            settings={settings}
+          />
+        }
+      />
+      <Route
+        path='/display'
+        element={
+          <Display
+            isConnected={isConnected}
+            rating={rating}
+            ip={ip}
+            settings={settings}
+            competitionData={competitionData}
+            judgeLinks={judgeLinks}
+          />
+        }
+      />
+      <Route
+        path='/countdown'
+        element={<Countdown isConnected={isConnected} rating={rating} />}
+      />
+      <Route
+        path='/versuch'
+        element={
+          <Attempt rating={rating} competitionData={competitionData} />
+        }
+      />
+    </>
+  );
+
   return (
-    <div
-      className={
-        kioskShell ? 'min-h-screen bg-black' : 'min-h-screen bg-gray-200'
-      }
-    >
+    <div className={shellClass}>
       <Navbar location={location} settings={settings} />
       <Routes>
-        <Route
-          path='/'
-          element={
-            <Home
-              ip={ip}
-              isConnected={isConnected}
-              compData={competitionData}
-            />
-          }
-        />
-        <Route
-          path='/display'
-          element={
-            <Display
-              isConnected={isConnected}
-              rating={rating}
-              ip={ip}
-              settings={settings}
-              competitionData={competitionData}
-              judgeLinks={judgeLinks}
-            />
-          }
-        />
-        <Route
-          path='/countdown'
-          element={<Countdown isConnected={isConnected} rating={rating} />}
-        />
-        <Route
-          path='/versuch'
-          element={
-            <Attempt rating={rating} competitionData={competitionData} />
-          }
-        />
-        <Route
-          path='/settings'
-          element={<Settings ip={ip} settings={settings} />}
-        />
-        <Route
-          path='/ref'
-          element={
-            <Ref
-              rating={rating}
-              isConnected={isConnected}
-              settings={settings}
-            />
-          }
-        />
-        <Route path='/login' element={<Navigate to='/' replace />} />
-        <Route path='*' element={<Navigate to='/' replace />} />
+        {isAdmin && (
+          <Route
+            path='/'
+            element={
+              <Home
+                ip={ip}
+                isConnected={isConnected}
+                compData={competitionData}
+              />
+            }
+          />
+        )}
+        {sharedRoutes}
+        {isAdmin && (
+          <Route
+            path='/settings'
+            element={<Settings ip={ip} settings={settings} />}
+          />
+        )}
+        {isAdmin ? (
+          <>
+            <Route path='/login' element={<Navigate to='/' replace />} />
+            <Route path='*' element={<Navigate to='/' replace />} />
+          </>
+        ) : (
+          <Route path='/login' element={<Login />} />
+        )}
       </Routes>
     </div>
   );
