@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router';
 import { useEffect } from 'react';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
 type NavbarProps = {
   location: Record<'pathname', string>;
@@ -9,6 +10,7 @@ type NavbarProps = {
 
 function Navbar({ location, settings }: NavbarProps) {
   const navigate = useNavigate();
+  const { logout } = useAdminAuth();
 
   useEffect(() => {
     document.title = location?.pathname.replace('/', '') || 'home';
@@ -74,8 +76,8 @@ function Navbar({ location, settings }: NavbarProps) {
             <li>
               <button
                 onClick={() => {
-                  localStorage.clear();
-                  navigate('/');
+                  logout();
+                  navigate('/login');
                 }}
               >
                 Logout
