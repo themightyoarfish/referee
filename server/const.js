@@ -97,7 +97,17 @@ const refValue = new DefaultRefValue();
 //map for socket user
 const users = new Map();
 
-//jwt secret
-const jwtSecret = process.env?.SECRET || uuidv4();
+let jwtSecret = process.env?.SECRET || null;
 
-module.exports = { refValue, users, jwtSecret };
+function getJwtSecret() {
+  if (!jwtSecret) {
+    jwtSecret = uuidv4();
+  }
+  return jwtSecret;
+}
+
+function setJwtSecret(secret) {
+  jwtSecret = secret;
+}
+
+module.exports = { refValue, users, getJwtSecret, setJwtSecret };

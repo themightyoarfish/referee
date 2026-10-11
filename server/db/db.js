@@ -3,9 +3,10 @@ PouchDB.plugin(require('pouchdb-find'));
 PouchDB.plugin(require('pouchdb-adapter-memory'));
 
 const { dbInit, dbGet, dbUpdate, dbFind } = require('../helper');
+const { getDatabasePath } = require('../config/paths');
 
 //persistent database
-const db = new PouchDB('./db/database');
+const db = new PouchDB(getDatabasePath());
 
 //clone from database above as in memory cache
 const dbMemory = new PouchDB('myDB', { adapter: 'memory' });
@@ -20,7 +21,7 @@ const doc = [
     _id: 'admin',
     name: 'admin',
     role: 'admin',
-    password: '$2a$10$f6DCKDU18EwgNWBPnRVqZu6szCqsMQFXw3OQJYlBDQStdcuzqIoUK',
+    bootstrapRequired: true,
   },
   {
     _id: 'left',
@@ -51,7 +52,7 @@ const doc = [
     refMenu: false,
     autoReset: true,
     autoResetTimer: 20,
-    judgeQrOnDisplay: true,
+    judgeQrOnDisplay: false,
   },
 ];
 
@@ -68,7 +69,7 @@ async function migrateDB() {
 
   const settings = await dbGet(db, 'settings');
   if (settings && settings.judgeQrOnDisplay === undefined) {
-    dbUpdate(db, 'settings', { judgeQrOnDisplay: true });
+    dbUpdate(db, 'settings', { judgeQrOnDisplay: false });
   }
 }
 

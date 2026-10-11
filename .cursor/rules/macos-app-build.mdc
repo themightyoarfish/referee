@@ -1,0 +1,37 @@
+---
+description: Verify macOS app build succeeds before finishing agent work
+alwaysApply: true
+---
+
+# macOS app build gate
+
+Do not tell the user your changes are done, complete, or ready until the macOS app build has finished successfully in this session.
+
+## When this applies
+
+- Any change that touches the app bundle, packaging, client, server, or dependencies that feed `Referee.app`
+- When the user asks for a feature, fix, or refactor in this repo unless they explicitly scope work to non-macOS targets only
+
+## Required verification (macOS)
+
+From the repository root:
+
+```bash
+./build-app.sh
+```
+
+The build must exit 0 and print `Built: .../build/macos/Referee.app`.
+
+## If the build fails
+
+- Fix the failure (compile errors, missing assets, packaging scripts, etc.) and re-run `./build-app.sh` until it passes
+- Report build failures and fixes in your summary; do not skip the gate because the change "looks small"
+
+## Non-macOS environments
+
+If you cannot run on macOS (e.g. Linux-only sandbox), say so clearly, run whatever subset is possible (e.g. `client` and `server` builds), and do **not** claim the macOS app is verified until `./build-app.sh` has been run successfully on macOS.
+
+## Completion wording
+
+- OK: "Build passed (`./build-app.sh` → `build/macos/Referee.app`)."
+- Not OK: "Should work" / "Ready to merge" without a successful `./build-app.sh` on macOS when this gate applies

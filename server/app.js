@@ -3,16 +3,15 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 const path = require('path');
-const api = require('./routes/api');
-const auth = require('./routes/auth');
-const settings = require('./routes/settings');
-const update = require('./routes/update');
-const vportal = require('./routes/vportal');
 const cors = require('cors');
 
 const { refValue, users } = require('./const');
-
-const { dbMemory, dbReady } = require('./db/db');
+const { setJwtSecret } = require('./const');
+const { loadSecrets } = require('./config/secrets');
+const { resolvePublicHostIp } = require('./config/host');
+const { baseUrl, setIo, broadcastPublicUrl } = require('./publicUrl');
+const { bootstrapAdmin } = require('./bootstrap/admin');
+const { db, dbMemory, dbReady } = require('./db/db');
 const { competitionData } = require('./vportal/getCompetitionData');
 const { dbGet, cleanObject, dbFind } = require('./helper');
 const { rotateJudgeTokens, getJudgeRefUrls } = require('./judgeTokens');
@@ -22,23 +21,25 @@ const {
   isJudgePosition,
 } = require('./refSessions');
 
-const ip = require('ip');
-
-const hostIp = process.env.HOST_IP || ip.address();
+const api = require('./routes/api');
+const auth = require('./routes/auth');
+const settings = require('./routes/settings');
+const update = require('./routes/update');
+const vportal = require('./routes/vportal');
 
 const { Server } = require('socket.io');
 
 const io = new Server(server, {
   cors: {
-    origin: '*', //'http://localhost:3000',
+    origin: '*',
   },
 });
 
 const port = process.env.PORT || 3030;
 
 var corsOptions = {
-  origin: '*', //'http://localhost:3000',
-  optionsSuccessStatus: 200, // For legacy browser support
+  origin: '*',
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
@@ -61,41 +62,34 @@ app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
 });
 
+setIo(io);
+
 async function emitJudgeLinks(targetSocket) {
-  const baseUrl = `http://${hostIp}:${port}`;
-  const judgeLinks = await getJudgeRefUrls(baseUrl);
+  const judgeLinks = await getJudgeRefUrls(baseUrl());
   targetSocket.emit('judgeLinks', judgeLinks);
 }
 
 io.on('connection', async (socket) => {
   console.log(`🍻 a user connected ID: ${socket.id} - ${new Date()}`);
 
-  //send host ip to clients
-  socket.emit('ip', `http://${hostIp}:${port}`);
+  socket.emit('ip', baseUrl());
   await emitJudgeLinks(socket);
 
-  //send rating to connecting clients
   socket.emit('rating', cleanObject(refValue));
-
-  //send timer
   socket.emit('timer', refValue?.timer);
 
-  //send settings
-  const settings = await dbGet(dbMemory, 'settings');
-  socket.emit('settings', settings);
-
-  //send competition data
+  const settingsDoc = await dbGet(dbMemory, 'settings');
+  socket.emit('settings', settingsDoc);
   socket.emit('intervall', competitionData.get('athletes'));
 
   socket.on('users', (data) => {
     users.set(socket.id, data);
     const usersOnline = Array.from(users.values());
-
     io.emit('getUsers', usersOnline);
   });
 
   socket.on('getIp', () => {
-    socket.emit('ip', `http://${hostIp}:${port}`);
+    socket.emit('ip', baseUrl());
   });
 
   socket.on('getJudgeLinks', async () => {
@@ -135,18 +129,35 @@ io.on('connection', async (socket) => {
   });
 });
 
-dbReady
-  .then(() => rotateJudgeTokens())
-  .then(() => {
+async function start() {
+  try {
+    const secrets = await loadSecrets();
+    setJwtSecret(secrets.jwtSecret);
+
+    await dbReady;
+    const bootstrapResult = await bootstrapAdmin(db, secrets);
+    if (!bootstrapResult.ok) {
+      console.error(
+        'Admin account is not configured. Use Referee.app for first-time setup, or set ADMIN_USER and ADMIN_PASSWORD (and SECRET) for development.'
+      );
+      process.exit(1);
+    }
+
+    resolvePublicHostIp();
+
+    await rotateJudgeTokens();
+
     server.listen(port, () => {
-      console.log(`listening on: http://${hostIp}:${port}`);
+      console.log(`listening on: ${baseUrl()}`);
       console.log(`Node Version: ${process.version}`);
     });
-  })
-  .catch((err) => {
-    console.error('Failed to prepare database or rotate judge tokens:', err);
+  } catch (err) {
+    console.error('Failed to start Referee:', err.message || err);
     process.exit(1);
-  });
+  }
+}
+
+start();
 
 const socketIoObject = io;
 module.exports.ioObject = socketIoObject;

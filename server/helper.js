@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { jwtSecret } = require('./const');
+const { getJwtSecret } = require('./const');
 
 //db find helper
 async function dbFind(db, field, value) {
@@ -122,7 +122,7 @@ function cleanSettingsBody(body) {
 function middleware(req, res, next) {
   const token = req?.headers?.authorization?.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, jwtSecret);
+    const decoded = jwt.verify(token, getJwtSecret());
     if (decoded) next();
   } catch (err) {
     console.error(err);

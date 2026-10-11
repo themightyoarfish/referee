@@ -14,7 +14,13 @@ const {
 
 const { getCompetitionData } = require('../vportal/getCompetitionData');
 const { getJudgeRefUrls } = require('../judgeTokens');
-const ip = require('ip');
+const {
+  listLanCandidates,
+  setPublicHostIp,
+  getSelectedHostInfo,
+  findCandidateByInterface,
+} = require('../config/host');
+const { baseUrl, broadcastPublicUrl } = require('../publicUrl');
 
 //protect routes
 router.use(middleware);
@@ -63,9 +69,7 @@ router.post('/update/ref', async (req, res) => {
   if (!data)
     return res.status(500).send({ msg: 'Es ist ein Fehler aufgetreten' });
 
-  const hostIp = process.env.HOST_IP || ip.address();
-  const port = process.env.PORT || 3030;
-  const judgeLinks = await getJudgeRefUrls(`http://${hostIp}:${port}`);
+  const judgeLinks = await getJudgeRefUrls(baseUrl());
   res.io.emit('judgeLinks', judgeLinks);
 
   res.header({ 'content-type': 'application/json' });
@@ -87,6 +91,35 @@ router.post('/update/admin', async (req, res) => {
 
   res.header({ 'content-type': 'application/json' });
   res.status(200).send({ msg: 'Admin updated!' });
+});
+
+router.get('/host', async (req, res) => {
+  const candidates = listLanCandidates();
+  const selected = getSelectedHostInfo();
+  res.status(200).send({ candidates, selected });
+});
+
+router.post('/host', async (req, res) => {
+  const { hostIp, interface: iface } = req.body;
+  try {
+    if (hostIp) {
+      setPublicHostIp(hostIp);
+    } else if (iface) {
+      const c = findCandidateByInterface(iface);
+      if (!c) {
+        return res.status(400).send({ msg: 'Unknown interface' });
+      }
+      setPublicHostIp(c.address);
+    } else {
+      return res.status(400).send({ msg: 'hostIp or interface required' });
+    }
+    const judgeLinks = await getJudgeRefUrls(baseUrl());
+    res.io.emit('judgeLinks', judgeLinks);
+    broadcastPublicUrl();
+    res.status(200).send({ ok: true, selected: getSelectedHostInfo() });
+  } catch (err) {
+    res.status(400).send({ msg: err.message || 'Error' });
+  }
 });
 
 module.exports = router;

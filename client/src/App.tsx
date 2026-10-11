@@ -122,9 +122,14 @@ function AppContent() {
     );
   }
 
+  const kioskShell =
+    location.pathname === '/display' ||
+    location.pathname === '/countdown' ||
+    location.pathname === '/versuch';
+
   if (isPublicRoute) {
     return (
-      <div className='min-h-screen bg-gray-200'>
+      <div className={kioskShell ? 'min-h-screen bg-black' : 'min-h-screen bg-gray-200'}>
         {!['/display', '/countdown', '/versuch', '/ref'].includes(
           location.pathname
         ) && <Navbar location={location} settings={settings} />}
@@ -180,7 +185,11 @@ function AppContent() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-200'>
+    <div
+      className={
+        kioskShell ? 'min-h-screen bg-black' : 'min-h-screen bg-gray-200'
+      }
+    >
       <Navbar location={location} settings={settings} />
       <Routes>
         <Route

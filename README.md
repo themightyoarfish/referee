@@ -142,7 +142,28 @@ For Raspberry Pi: use a **64-bit** OS. The Docker image will not start on 32-bit
 
 ---
 
+## Run on macOS (no Terminal)
 
+For a meet laptop, use **Referee.app** instead of Docker or the command line.
+
+1. On a Mac, from the project root, run `./build-app.sh` (requires network once to download Node.js). Output: `build/macos/Referee.app`.
+2. Copy **Referee.app** to Applications and double-click it.
+3. **First launch:** dialogs ask for an admin username and password (for `/login` in the browser). Values are stored in the **macOS Keychain**, not in a text file.
+4. **Every launch:** a short dialog lets you **Server starten** or **Server beenden** (or **Abbrechen**). The same dialog explains that you stop the server by opening Referee again later and choosing **Server beenden**. **Server starten** always starts fresh: if a server is already running, it is stopped first, then you get the network picker and a new server.
+5. After **Server starten**, choose which **local network address** judges should use (Wi‑Fi or Ethernet). The app does **not** remember last week’s address on disk.
+6. The browser opens the display page. Judges scan QR codes on that network. Referee itself can close; the server keeps running in the background until you **Server beenden** from a later launch.
+
+Data is stored under `~/Library/Application Support/Referee/` (database and logs).
+
+**Troubleshooting:** After `./build-app.sh`, copy the new `build/macos/Referee.app` into Applications (replace the old one). If you see “Referee wird bereits gestartet…” on every launch with no window, update to a build that uses the `mkdir` launcher lock (older builds mistakenly required `flock`, which macOS does not include). Run `packaging/macos/cleanup-stale-referee.sh`, then try again. If the Dock icon bounces and nothing opens, or macOS says the app is not open anymore, a previous server may still be on port 3030 or a second launch overlapped the first. Run the cleanup script, wait a few seconds, then open Referee again. Do not double-click Referee repeatedly while it is starting.
+
+**Cannot delete or replace Referee.app (“application is open”):** A server process may still be running. Open Referee and choose **Server beenden**, or run `packaging/macos/cleanup-stale-referee.sh`. In Activity Monitor, look for `node` under `/Applications/Referee.app/...` and quit it, then try deleting the app again.
+
+To change the network address during the same day without restarting: log in as admin → **Settings** → **Adresse für QR-Codes** (until the server is stopped).
+
+**Security:** The signing key for admin sessions and the admin password are read from Keychain inside the server process—they are not passed on the command line. The chosen LAN IP is passed only for that run (`HOST_IP`), which is expected.
+
+---
 
 ## Quick start with Docker (recommended)
 
@@ -300,8 +321,12 @@ All variables are optional unless noted. Set them in `docker-compose.yml`, a she
 | Variable         | Default                          | Description                                                                                                                                                                                                                   |
 | ---------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PORT`           | `3030`                           | TCP port the HTTP and Socket.io server listens on.                                                                                                                                                                            |
-| `HOST_IP`        | Auto-detected via `ip` package   | LAN IP address sent to clients over Socket.io and embedded in QR codes. **Required on macOS/Windows Docker** where port mapping hides the real IP. On Linux with `network_mode: host`, leave unset unless detection is wrong. |
-| `SECRET`         | Random UUID generated at startup | Signing key for admin JWT tokens (`/auth/admin`). **Set a fixed value in production** or admin sessions invalidate on every restart.                                                                                          |
+| `HOST_IP`        | Auto if exactly one LAN IPv4     | LAN IP in QR codes and Socket.io. **Referee.app sets this each launch.** Required on Docker Desktop (macOS/Windows). If unset and multiple LAN addresses exist, the server exits with an error instead of guessing.          |
+| `SECRET`         | Random UUID generated at startup | Signing key for admin JWT tokens (`/auth/admin`). **Set a fixed value in production** or admin sessions invalidate on every restart. On macOS, use Referee.app (Keychain) instead of committing this in compose files.       |
+| `ADMIN_USER`     | unset                            | With `ADMIN_PASSWORD`, bootstraps the admin account on startup (development/Docker). Not used when Keychain credentials exist.                                                                                                |
+| `ADMIN_PASSWORD` | unset                            | Plain-text bootstrap password for first server start (hashed into the database). **Visible in process listings**—prefer Referee.app on macOS.                                                                                 |
+| `REFEREE_DATA_DIR` | server `./db`                  | Root folder for the database (Referee.app sets this to Application Support).                                                                                                                                                  |
+| `REFEREE_SECRETS` | unset                         | Set to `keychain` (with `REFEREE_APP_BUNDLE`) to load `SECRET` and admin credentials from macOS Keychain service `de.referee.app`.                                                                                            |
 | `FETCH_INTERVAL` | `2000`                           | Milliseconds between VPortal polling requests for current attempt data. Do not set below `2000`.                                                                                                                              |
 | `VPORTAL_URL`    | `dev`                            | Which VPortal instance to use. One of: `dev`, `staging`, `bvdk`, `oevk`. Maps to `*.vportal-online.de` hosts in `server/vportal/vportalHelper.js`.                                                                            |
 | `DOCKER_RUNNING` | unset                            | When set (e.g. `true`), marks the instance as Docker-hosted in settings and **disables** the in-app git-pull update feature.                                                                                                  |
@@ -312,6 +337,8 @@ Example for local development:
 ```bash
 export HOST_IP=192.168.1.10
 export SECRET=my-dev-secret
+export ADMIN_USER=admin
+export ADMIN_PASSWORD=your-dev-password
 export VPORTAL_URL=dev
 export FETCH_INTERVAL=2000
 cd server && npm start
@@ -353,12 +380,13 @@ chromium = sleep 15;chromium-browser "http://localhost:3030/display" --kiosk --n
 
 ## Default credentials
 
-Change these immediately after first login.
+New installations have **no default admin password** until you complete setup (Referee.app or `ADMIN_USER` / `ADMIN_PASSWORD`). Existing databases may still have the legacy pair below—change it in Settings or re-run setup.
 
 
 | Context          | Username / role | Password / token |
 | ---------------- | --------------- | ---------------- |
-| Admin (`/login`) | `admin`         | `admin`          |
+| Admin (`/login`) | (you choose)    | (you choose)     |
+| Legacy seed only | `admin`         | `admin`          |
 | Left judge       | —               | Random per server start (was `4711` on first install) |
 | Head judge       | —               | Random per server start (was `6666` on first install) |
 | Right judge      | —               | Random per server start (was `6969` on first install) |

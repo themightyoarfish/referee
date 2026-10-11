@@ -9,7 +9,9 @@ services:
       - ./database:/home/app/server/db/database
     environment:
       DOCKER_RUNNING: true
-      HOST_IP: 192.168.1.128
-      SECRET: password
+      # Set HOST_IP to your machine's LAN address (required on macOS/Windows Docker).
+      # HOST_IP: 192.168.1.128
+      # Set SECRET, ADMIN_USER, and ADMIN_PASSWORD via a private env file (not committed).
+      # See README — prefer Referee.app on macOS instead of storing secrets here.
       FETCH_INTERVAL: 2000
       VPORTAL_URL: bvdk

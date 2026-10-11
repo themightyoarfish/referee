@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const jwt = require('jsonwebtoken');
-const { jwtSecret } = require('../const');
+const { getJwtSecret } = require('../const');
 
 const bcrypt = require('bcrypt');
 
@@ -23,14 +23,22 @@ router.post('/admin', async function (req, res) {
   const { user, password } = req.body;
   const adminUser = await dbGet(dbMemory, 'admin');
 
-  const passCheck = await bcrypt.compare(password, adminUser?.password);
+  if (
+    !adminUser?.password ||
+    adminUser.bootstrapRequired ||
+    !adminUser.name
+  ) {
+    return res.status(401).send({ mgs: 'Unauthorized' });
+  }
+
+  const passCheck = await bcrypt.compare(password, adminUser.password);
 
   if (user === adminUser.name && passCheck) {
     const token = await jwt.sign(
       {
         user: 'admin',
       },
-      jwtSecret,
+      getJwtSecret(),
       { expiresIn: '6h' }
     );
 
@@ -45,7 +53,7 @@ router.post('/admin', async function (req, res) {
 router.get('/check', (req, res) => {
   const token = req?.headers?.authorization?.split(' ')[1];
   try {
-    jwt.verify(token, jwtSecret);
+    jwt.verify(token, getJwtSecret());
     res.status(200).send({ valid: true });
   } catch (err) {
     res.status(401).send({ valid: false });

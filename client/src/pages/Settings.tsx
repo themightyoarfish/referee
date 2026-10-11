@@ -7,6 +7,7 @@ import SettingsAdminCard from '../components/SettingsAdminCard';
 import SettingsUpdateCard from '../components/SettingsUpdateCard';
 import SettingsOptions from '../components/SettingsOptions';
 import SettingsVPortalCard from '../components/SettingsVPortalCard';
+import SettingsHostCard from '../components/SettingsHostCard';
 
 type Props = {
   ip: string | null;
@@ -91,6 +92,9 @@ function Settings({ ip, settings }: Props) {
           ))}
          
           
+          <div className='col-span-3 lg:col-span-1 bg-white rounded-lg p-8'>
+            <SettingsHostCard accessToken={accessToken} />
+          </div>
           <div className='col-span-3 lg:col-span-1 bg-white rounded-lg p-8'>
             <SettingsAdminCard accessToken={accessToken} />
           </div>
