@@ -4,7 +4,6 @@ import Navbar from './components/Navbar';
 import { socket } from './socket';
 import AdminAuthProvider, { useAdminAuth } from './context/AdminAuthContext';
 
-import Home from './pages/Home';
 import Display from './pages/Display';
 import Countdown from './pages/Countdown';
 import Attempt from './pages/Attempt';
@@ -185,16 +184,7 @@ function AppContent() {
       <Navbar location={location} settings={settings} />
       <Routes>
         {isAdmin && (
-          <Route
-            path='/'
-            element={
-              <Home
-                ip={ip}
-                isConnected={isConnected}
-                compData={competitionData}
-              />
-            }
-          />
+          <Route path='/' element={<Navigate to='/settings' replace />} />
         )}
         {sharedRoutes}
         {isAdmin && (
@@ -205,8 +195,8 @@ function AppContent() {
         )}
         {isAdmin ? (
           <>
-            <Route path='/login' element={<Navigate to='/' replace />} />
-            <Route path='*' element={<Navigate to='/' replace />} />
+            <Route path='/login' element={<Navigate to='/settings' replace />} />
+            <Route path='*' element={<Navigate to='/settings' replace />} />
           </>
         ) : (
           <Route path='/login' element={<Login />} />
