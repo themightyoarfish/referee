@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  paths:
+      - 'client/**'
+      - 'server/**'
+      - 'build-app.sh'
+      - 'packaging/**'
 
 concurrency:
   group: macos-app
