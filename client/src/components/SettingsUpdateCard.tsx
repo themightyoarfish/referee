@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getData } from '../helper/helper';
 import useSubmit from '../hooks/useSubmit';
 import Loading from './Loading';
@@ -15,14 +15,14 @@ function SettingsUpdateCard({ accessToken }: Props) {
 
   const { loading, error, success, fetchData } = useSubmit();
 
-  async function getUpdateData() {
+  const getUpdateData = useCallback(async () => {
     const data: Record<string, string> | null = await getData(
       '/api/update/status',
       'GET',
       accessToken
     );
     setUpdates(data);
-  }
+  }, [accessToken]);
 
   async function handleSubmit() {
     const update = await fetchData('/api/update', 'POST', {}, accessToken);
@@ -31,7 +31,7 @@ function SettingsUpdateCard({ accessToken }: Props) {
 
   useEffect(() => {
     getUpdateData();
-  }, [updateMsg]);
+  }, [getUpdateData, updateMsg]);
   return (
     <>
       {!updates ? (

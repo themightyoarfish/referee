@@ -1,5 +1,5 @@
 import useSubmit from '../hooks/useSubmit';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { handelSubmit } from '../helper/helper';
 
 import Alert from './Alert';
@@ -32,32 +32,35 @@ function SettingsVPortalCard({ accessToken }: Props) {
   const [tab, setTab] = useState('tab1');
   const { loading, error, success, fetchData } = useSubmit();
 
-  async function getData(url: string, state: any): Promise<void> {
-    try {
-      const req = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const res = await req.json();
-      if (req.ok) {
-        state(res);
-      } else state(null);
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  const fetchAuthorized = useCallback(
+    async <T,>(url: string, state: (value: T | null) => void): Promise<void> => {
+      try {
+        const req = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        const res = await req.json();
+        if (req.ok) {
+          state(res as T);
+        } else state(null);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [accessToken]
+  );
 
   useEffect(() => {
-    getData('/api/vportal', setVportal);
-  }, []);
+    fetchAuthorized('/api/vportal', setVportal);
+  }, [fetchAuthorized]);
 
   useEffect(() => {
     if (vportal?.access_token) {
       setTab('tab2');
-      getData('/api/vportal/stage', setStages);
+      fetchAuthorized('/api/vportal/stage', setStages);
     } else setTab('tab1');
-  }, [vportal, success]);
+  }, [vportal, success, fetchAuthorized]);
 
   async function handleLogin(e: any): Promise<void> {
     const res: any = await fetchData(

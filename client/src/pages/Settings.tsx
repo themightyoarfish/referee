@@ -52,7 +52,7 @@ function Settings({ ip, settings }: Props) {
     } else {
       navigate('/login');
     }
-  }, []);
+  }, [navigate]);
 
   function handleChange(e: any) {
     fetch('/api/settings', {

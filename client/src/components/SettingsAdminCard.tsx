@@ -27,7 +27,7 @@ function SettingsAdminCard({ accessToken }: Props) {
     }
 
     fetchAdmin();
-  }, []);
+  }, [accessToken]);
 
   return (
     <>
