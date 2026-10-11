@@ -5,7 +5,6 @@ import RefButton from '../components/RefButton';
 
 import RefButtonLogin from '../components/RefButtonLogin';
 import Timekeeper from '../components/Timekeeper';
-import Loading from '../components/Loading';
 import Light from '../components/Light';
 import OnlineStatus from '../components/OnlineStatus';
 import { showRating, checkRatingSubmit } from '../helper/helper';
@@ -31,8 +30,6 @@ function Ref({ rating, isConnected, settings }: Props) {
         <div className='min-h-full min-w-full flex items-center'>
           <RefButtonLogin setToken={setToken} token={token} setRef={setRef} />
         </div>
-      ) : !ref ? (
-        <Loading />
       ) : ref?._id === 'timekeeper' ? (
         <Timekeeper isConnected={isConnected} rating={rating} token={token} />
       ) : (
