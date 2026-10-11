@@ -38,7 +38,7 @@ function Ref({ rating, isConnected, settings }: Props) {
             <OnlineStatus isConnected={isConnected} />
           </div>
           <div className='flex flex-col justify-center space-y-2 m-auto px-6 py-2 h-full'>
-            <div className='flex flex-row w-2/4 lg:w-1/2 space-x-6 justify-center border border-gray-400 bg-gray-300 rounded p-1 mx-auto'>
+            <div className='flex flex-row w-1/2 space-x-6 justify-center border border-gray-400 bg-gray-300 rounded p-1 mx-auto'>
               <div className='flex flex-col items-center justify-center w-full m-auto'>
                 <Light
                   color={showRating(rating, 'left')}
