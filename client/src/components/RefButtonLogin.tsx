@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useSubmit from '../hooks/useSubmit';
 import { socket } from '../socket';
@@ -6,16 +6,20 @@ import { socket } from '../socket';
 type RefButtonLoginProps = {
   setToken: React.Dispatch<React.SetStateAction<string | null>>;
   token: string | null;
-  setRef: React.Dispatch<React.SetStateAction<RefObject | null>>
-}
+  setRef: React.Dispatch<React.SetStateAction<RefObject | null>>;
+};
 
 const JUDGE_POSITIONS = new Set(['left', 'main', 'right']);
+
+/** Survives Strict Mode remounts so QR / stored-token auto-login runs once per token. */
+const autoLoginAttempted = new Set<string>();
 
 function RefButtonLogin({ setToken, token, setRef }: RefButtonLoginProps) {
   const { loading, error, success, fetchData } = useSubmit();
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const loginInFlight = useRef(false);
 
   useEffect(() => {
     function onRegisterFailed(payload: { msg?: string }) {
@@ -30,34 +34,45 @@ function RefButtonLogin({ setToken, token, setRef }: RefButtonLoginProps) {
     };
   }, [setRef]);
 
-  useEffect(() => {
-    if (searchParams.get('token')) {
-      setToken(searchParams.get('token'));
-      handleSubmit(searchParams.get('token'));
-    } else if (localStorage.getItem('refToken')) {
-      setToken(localStorage.getItem('refToken'));
-      handleSubmit(localStorage.getItem('refToken'));
-    }
-  }, [searchParams]);
-
-  async function handleSubmit(refToken: any): Promise<void> {
-    const data: any = await fetchData(
-      '/auth/ref',
-      'POST',
-      { token: refToken },
-      null,
-      refToken
-    );
-    if (data) {
-      setSessionError(null);
-      setRef(data);
-      localStorage.setItem('refToken', refToken);
-      if (JUDGE_POSITIONS.has(data.position)) {
-        socket.emit('refRegister', { token: refToken });
+  const handleSubmit = useCallback(
+    async (refToken: string | null): Promise<void> => {
+      if (!refToken || loginInFlight.current) return;
+      loginInFlight.current = true;
+      try {
+        const data: any = await fetchData(
+          '/auth/ref',
+          'POST',
+          { token: refToken },
+          null,
+          refToken
+        );
+        if (data) {
+          setSessionError(null);
+          setRef(data);
+          localStorage.setItem('refToken', refToken);
+          if (JUDGE_POSITIONS.has(data.position)) {
+            socket.emit('refRegister', { token: refToken });
+          }
+        } else {
+          localStorage.removeItem('refToken');
+          autoLoginAttempted.delete(refToken);
+        }
+      } finally {
+        loginInFlight.current = false;
       }
-    }
-    if (!data) localStorage.removeItem('refToken');
-  }
+    },
+    [fetchData, setRef]
+  );
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('token');
+    const fromStorage = localStorage.getItem('refToken');
+    const refToken = fromUrl ?? fromStorage;
+    if (!refToken || autoLoginAttempted.has(refToken)) return;
+    autoLoginAttempted.add(refToken);
+    setToken(refToken);
+    void handleSubmit(refToken);
+  }, [searchParams, handleSubmit, setToken]);
 
   return (
     <div className='min-w-full min-h-screen flex items-center justify-center'>
