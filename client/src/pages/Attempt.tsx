@@ -48,7 +48,11 @@ function Attempt({ rating, competitionData }: Props) {
             <div className='text-9xl'>{`${translateDiscipline(
               competitionData[0]?.discipline
             )}`}</div>
-            {competitionData[0]?.competitionAthlete.team ?? (
+            {competitionData[0]?.competitionAthlete?.team ? (
+              <div className='text-5xl'>
+                {competitionData[0].competitionAthlete.team}
+              </div>
+            ) : (
               <div className='text-5xl'>{`${competitionData[0]?.competitionAthlete?.bodyWeightCategory?.name} - ${competitionData[0]?.competitionAthlete?.ageCategory?.name}`}</div>
             )}
           </div>
