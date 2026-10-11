@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { socket } from '../socket';
+import { useState } from 'react';
 
 import RefButton from '../components/RefButton';
 
