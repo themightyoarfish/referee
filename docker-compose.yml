@@ -7,10 +7,11 @@ services:
       - 3030:3030
     volumes:
       - ./database:/home/app/server/db/database
+    env_file: .env.example
     environment:
       DOCKER_RUNNING: true
       # Set HOST_IP to your machine's LAN address (required on macOS/Windows Docker).
-      # HOST_IP: 192.168.1.128
+      HOST_IP: 192.168.1.128
       # Set SECRET, ADMIN_USER, and ADMIN_PASSWORD via a private env file (not committed).
       # See README — prefer Referee.app on macOS instead of storing secrets here.
       FETCH_INTERVAL: 2000
