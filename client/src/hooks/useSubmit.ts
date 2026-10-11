@@ -51,7 +51,23 @@ function useSubmit(): ReturnValue {
         headers,
         body: method === 'GET' ? null : JSON.stringify(body),
       });
-      const res = await req.json();
+      const raw = await req.text();
+      let res: Record<string, string> | null = {};
+      if (raw) {
+        try {
+          res = JSON.parse(raw) as Record<string, string>;
+        } catch {
+          res = null;
+        }
+      }
+      if (res === null) {
+        setLoading(false);
+        setError(true);
+        setTimeout(() => {
+          isMounted.current && setError(false);
+        }, 1000);
+        return null;
+      }
 
       if (req.ok) {
         setLoading(false);
