@@ -130,6 +130,15 @@ function middleware(req, res, next) {
   }
 }
 
+/** Referee judge token from header (preferred), body, or query (legacy). */
+function getRefTokenFromRequest(req) {
+  const header = req.headers['x-ref-token'];
+  if (typeof header === 'string' && header.length > 0) return header;
+  if (req.body?.token) return req.body.token;
+  if (req.query?.token) return req.query.token;
+  return null;
+}
+
 //check env if running in docker
 function isDocker(db) {
   try {
@@ -153,5 +162,6 @@ module.exports = {
   cleanSettingsBody,
   middleware,
   dbRemoveDoc,
-  isDocker
+  isDocker,
+  getRefTokenFromRequest,
 };

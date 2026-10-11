@@ -5,9 +5,11 @@ type propTypes = {
   title: 'Weiß' | 'Rot' | 'Gelb' | 'Blau' | 'Start' | 'Reset';
   url: string;
   method: 'POST' | 'GET';
+  refToken?: string | null;
+  body?: Record<string, string> | null;
 };
 
-function RefButton({ color, title, url, method }: propTypes) {
+function RefButton({ color, title, url, method, refToken, body }: propTypes) {
   const { loading, error, success, fetchData } = useSubmit();
   return (
     <button
@@ -20,7 +22,7 @@ function RefButton({ color, title, url, method }: propTypes) {
       } text-center p-4 rounded-md hover:cursor-pointer ${
         error && 'bg-red-800'
       } ${success && 'bg-green-400'}`}
-      onClick={() => fetchData(url, method)}
+      onClick={() => fetchData(url, method, body ?? null, null, refToken)}
     >
       <div className='inline-flex items-center justify-center gap-2'>
         {success && (

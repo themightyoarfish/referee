@@ -44,10 +44,24 @@ function Timekeeper({ isConnected, rating, token }: Props) {
               
             </div>
             <div className=' w-10/12'>
-              <RefButton color='white' title='Start' url={`/api/timer?token=${token}&position=timekeeper`} method='POST'/>
+              <RefButton
+                color='white'
+                title='Start'
+                url='/api/timer'
+                method='POST'
+                body={{ position: 'timekeeper' }}
+                refToken={token}
+              />
             </div>
             <div className=' w-10/12'>
-              <RefButton color='red' title='Reset' url={`/api/ref/reset?token=${token}&position=timekeeper`} method='POST'/>
+              <RefButton
+                color='red'
+                title='Reset'
+                url='/api/ref/reset'
+                method='POST'
+                body={{ position: 'timekeeper' }}
+                refToken={token}
+              />
             </div>
             
           </div>

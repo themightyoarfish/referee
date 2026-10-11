@@ -8,7 +8,8 @@ type ReturnValue = {
     url: string,
     method: Method,
     body?: object | null,
-    accessToken?: string | null
+    accessToken?: string | null,
+    refToken?: string | null
   ) => Promise<Record<string, string> | null>;
 };
 
@@ -31,16 +32,23 @@ function useSubmit(): ReturnValue {
     url: string,
     method: Method,
     body?: object | null,
-    accessToken?: string | null
+    accessToken?: string | null,
+    refToken?: string | null
   ): Promise<Record<string, string> | null> {
     try {
       setLoading(true);
+      const headers: Record<string, string> = {
+        'content-type': 'application/json',
+      };
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+      if (refToken) {
+        headers['X-Ref-Token'] = refToken;
+      }
       const req = await fetch(url, {
         method: method,
-        headers: {
-          'content-type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers,
         body: method === 'GET' ? null : JSON.stringify(body),
       });
       const res = await req.json();

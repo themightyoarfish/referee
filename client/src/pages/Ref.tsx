@@ -90,32 +90,36 @@ function Ref({ rating, isConnected, settings }: Props) {
                 <RefButton
                   color={'white'}
                   title={'Weiß'}
-                  url={`/api/ref/?token=${token}&light=white`}
+                  url='/api/ref/?light=white'
                   method={'GET'}
+                  refToken={token}
                 />
               </div>
               <div className='w-full'>
                 <RefButton
                   color={'red'}
                   title={'Rot'}
-                  url={`/api/ref/?token=${token}&light=red`}
+                  url='/api/ref/?light=red'
                   method={'GET'}
+                  refToken={token}
                 />
               </div>
               <div className='w-full'>
                 <RefButton
                   color={'blue'}
                   title={'Blau'}
-                  url={`/api/ref/?token=${token}&light=blue`}
+                  url='/api/ref/?light=blue'
                   method={'GET'}
+                  refToken={token}
                 />
               </div>
               <div className='w-full'>
                 <RefButton
                   color={'yellow'}
                   title={'Gelb'}
-                  url={`/api/ref/?token=${token}&light=yellow`}
+                  url='/api/ref/?light=yellow'
                   method={'GET'}
+                  refToken={token}
                 />
               </div>
             </div>
@@ -125,16 +129,20 @@ function Ref({ rating, isConnected, settings }: Props) {
                   <RefButton
                     color={'gray'}
                     title={'Start'}
-                    url={`/api/timer?token=${token}&position=main`}
+                    url='/api/timer'
                     method={'POST'}
+                    body={{ position: 'main' }}
+                    refToken={token}
                   />
                 </div>
                 <div className='w-full '>
                   <RefButton
                     color={'gray'}
                     title={'Reset'}
-                    url={`/api/ref/reset?token=${token}&position=main`}
+                    url='/api/ref/reset'
                     method={'POST'}
+                    body={{ position: 'main' }}
+                    refToken={token}
                   />
                 </div>
               </div>

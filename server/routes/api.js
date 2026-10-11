@@ -3,7 +3,13 @@ const router = express.Router();
 const { refValue } = require('../const');
 
 const { dbMemory } = require('../db/db');
-const { dbFind, dbGet, dbAll, cleanObject } = require('../helper');
+const {
+  dbFind,
+  dbGet,
+  dbAll,
+  cleanObject,
+  getRefTokenFromRequest,
+} = require('../helper');
 const { sendRating } = require('../vportal/vportalHelper');
 const { competitionData } = require('../vportal/getCompetitionData');
 
@@ -14,7 +20,8 @@ const allowedTimekeeper = ['main', 'timekeeper'];
 
 //referee submit
 router.get('/ref', async (req, res) => {
-  const { token, light } = req.query;
+  const token = getRefTokenFromRequest(req);
+  const { light } = req.query;
   const role = await dbFind(dbMemory, 'token', token);
 
   const settings = await dbGet(dbMemory, 'settings');
@@ -63,7 +70,8 @@ router.get('/ref', async (req, res) => {
 
 //reset rating
 router.post('/ref/reset', async (req, res) => {
-  const { token, position } = req.query;
+  const token = getRefTokenFromRequest(req);
+  const position = req.body?.position ?? req.query?.position;
   const ref = await dbGet(dbMemory, position);
 
   if (ref?.token === token && allowedTimekeeper.includes(ref?.position)) {
@@ -83,7 +91,8 @@ router.post('/ref/reset', async (req, res) => {
 
 // timer
 router.post('/timer', async (req, res) => {
-  const { token, position } = req.query;
+  const token = getRefTokenFromRequest(req);
+  const position = req.body?.position ?? req.query?.position;
   const ref = await dbGet(dbMemory, position);
 
   if (ref?.token === token && allowedTimekeeper.includes(ref?.position)) {

@@ -42,10 +42,11 @@ function RefButtonLogin({ setToken, token, setRef }: RefButtonLoginProps) {
 
   async function handleSubmit(refToken: any): Promise<void> {
     const data: any = await fetchData(
-      `/auth/ref?token=${refToken}`,
-      'GET',
+      '/auth/ref',
+      'POST',
+      { token: refToken },
       null,
-      null
+      refToken
     );
     if (data) {
       setSessionError(null);

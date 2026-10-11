@@ -7,16 +7,19 @@ const { getJwtSecret } = require('../const');
 const bcrypt = require('bcrypt');
 
 const { dbMemory } = require('../db/db');
-const { dbFind, dbGet } = require('../helper');
+const { dbFind, dbGet, getRefTokenFromRequest } = require('../helper');
 
-// auth ref by token
-router.get('/ref', async function (req, res) {
-  const { token } = req.query;
+async function authRefByToken(req, res) {
+  const token = getRefTokenFromRequest(req);
   const ref = await dbFind(dbMemory, 'token', token);
 
   if (!ref) return res.status(401).send({ msg: 'Unauthorized' });
   return res.status(200).send(ref[0]);
-});
+}
+
+// auth ref by token (GET query kept for QR deep links)
+router.get('/ref', authRefByToken);
+router.post('/ref', authRefByToken);
 
 // auth admin
 router.post('/admin', async function (req, res) {
