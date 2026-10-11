@@ -36,7 +36,7 @@ function Display({
   const showJudgeQr = settings?.judgeQrOnDisplay === true;
 
   return (
-    <div className='h-screen w-full bg-black text-red-600  font-semibold justify-center grid grid-cols-3 gap-2 items-center px-4 overflow-hidden cursor-none'>
+    <div className='relative h-screen w-full bg-black text-red-600  font-semibold justify-center grid grid-cols-3 gap-2 items-center px-4 overflow-hidden cursor-none'>
       {!settings?.hideCountdown && (
         <>
           <div
