@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const simpleGit = require('simple-git');
+const { simpleGit } = require('simple-git');
 
 const { exec } = require('node:child_process');
 

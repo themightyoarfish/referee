@@ -111,7 +111,7 @@ prompt_launch_choice() {
   osascript <<EOF 2>/dev/null || echo "Abbrechen"
 set msg to "Referee startet oder beendet den Kampfrichter-Server auf diesem Rechner.
 
-Server beenden: Referee erneut starten und \"Server beenden\" waehlen.
+Server beenden: Referee erneut starten und \"Server beenden\" wählen.
 
 ${status_msg}
 
@@ -142,7 +142,7 @@ start_server() {
   sleep 2
   if ! kill -0 "$server_pid" 2>/dev/null; then
     rm -f "$PID_FILE"
-    osascript -e 'display alert "Referee" message "Server konnte nicht gestartet werden. Siehe Log in Application Support/Referee/logs."' 2>/dev/null || true
+    osascript -e 'display alert "Referee" message "Server konnte nicht gestartet werden. Siehe Log in ~/Library/Application\ Support/Referee/logs."' 2>/dev/null || true
     tail -20 "$LOG_FILE" 2>/dev/null || true
     return 1
   fi

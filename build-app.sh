@@ -59,6 +59,10 @@ cp "$ROOT/packaging/macos/keychain.sh" "$RES/macos-scripts/"
 cp "$ROOT/packaging/macos/cleanup-stale-referee.sh" "$RES/macos-scripts/"
 chmod +x "$APP_DIR/Contents/MacOS/Referee" "$RES/macos-scripts/"*.sh
 
+echo "==> App icon (favicon.ico)"
+chmod +x "$ROOT/packaging/macos/make-app-icon.sh"
+"$ROOT/packaging/macos/make-app-icon.sh" "$ROOT/client/public/favicon.ico" "$RES/AppIcon.icns"
+
 cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -70,6 +74,8 @@ cat >"$APP_DIR/Contents/Info.plist" <<'PLIST'
   <string>de.referee.app</string>
   <key>CFBundleName</key>
   <string>Referee</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
