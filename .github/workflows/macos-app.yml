@@ -3,12 +3,12 @@ name: macOS app
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-  paths:
+    paths:
       - 'client/**'
       - 'server/**'
       - 'build-app.sh'
       - 'packaging/**'
+  workflow_dispatch:
 
 concurrency:
   group: macos-app
