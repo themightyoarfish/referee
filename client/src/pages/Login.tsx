@@ -1,11 +1,20 @@
+import { useState } from 'react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { useNavigate } from 'react-router';
+
+/** Base DaisyUI input classes; `input-error` highlights invalid login attempts. */
+const inputBaseClass = 'input input-bordered w-full max-w-xs';
 
 function Login() {
   const { login } = useAdminAuth();
   const navigate = useNavigate();
+  const [fieldError, setFieldError] = useState(false);
 
-  async function handleSubmit(e: any) {
+  function clearFieldError() {
+    setFieldError(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const body: Record<string, any> = {};
@@ -16,10 +25,14 @@ function Login() {
     const res = await login(body);
     if (res) {
       navigate('/');
+    } else {
+      setFieldError(true);
     }
 
     return body;
   }
+
+  const inputClass = fieldError ? `${inputBaseClass} input-error` : inputBaseClass;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -38,7 +51,8 @@ function Login() {
                     name='user'
                     id='user'
                     placeholder='Benutzer'
-                    className='input input-bordered w-full max-w-xs'
+                    className={inputClass}
+                    onInput={clearFieldError}
                   />
                 </div>
                 <div>
@@ -49,7 +63,8 @@ function Login() {
                     type='password'
                     name='password'
                     id='password'
-                    className='input input-bordered w-full max-w-xs'
+                    className={inputClass}
+                    onInput={clearFieldError}
                   />
                 </div>
                 <div>
