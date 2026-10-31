@@ -167,85 +167,91 @@ To change the network address during the same day without restarting: log in as 
 
 ## Quick start with Docker (recommended)
 
+The repository ships a ready-to-use `docker-compose.yml`. It maps port **3030**, persists data in `./database`, loads secrets from an env file, and **builds the image from the local checkout** by default (`build: .` → `referee:latest`).
 
-
-### 1. Create project directory
+### 1. Clone and prepare data directory
 
 ```bash
-mkdir referee && cd referee
-mkdir database
+git clone https://github.com/franknitschke/referee.git
+cd referee
+mkdir -p database
 ```
 
-The `database` folder persists settings, tokens, and VPortal credentials across restarts.
+The `database` folder persists settings, tokens, and VPortal credentials across container restarts.
 
-### 2. Create `docker-compose.yml`
+### 2. Secrets and `HOST_IP`
 
-**Linux** (including Raspberry Pi) — use host networking so the server can detect the correct LAN IP automatically:
+Compose loads `SECRET`, `ADMIN_USER`, and `ADMIN_PASSWORD` from **`env_file`** (the repo points at `.env.example` for a quick dev bootstrap). For anything beyond local testing, copy it to a private file and point compose at that file:
 
-```yaml
-version: "3"
-services:
-  referee:
-    image: ghcr.io/franknitschke/referee:latest
-    restart: always
-    network_mode: host
-    volumes:
-      - ./database:/home/app/server/db/database
-    environment:
-      DOCKER_RUNNING: "true"
-      SECRET: "change-me-to-a-long-random-string"
-      FETCH_INTERVAL: "2000"
-      VPORTAL_URL: bvdk
+```bash
+cp .env.example .env
+# edit .env: long random SECRET, admin username/password
 ```
 
-**macOS and Windows** — Docker Desktop does not support `network_mode: host`. Map port 3030 and set `HOST_IP` to your machine’s LAN address:
+In `docker-compose.yml`, change `env_file: .env.example` to `env_file: .env` (do not commit `.env`).
 
-```yaml
-version: "3"
-services:
-  referee:
-    image: ghcr.io/franknitschke/referee:latest
-    restart: always
-    ports:
-      - "3030:3030"
-    volumes:
-      - ./database:/home/app/server/db/database
-    environment:
-      DOCKER_RUNNING: "true"
-      HOST_IP: "192.168.1.10"   # replace with your LAN IP
-      SECRET: "change-me-to-a-long-random-string"
-      FETCH_INTERVAL: "2000"
-      VPORTAL_URL: bvdk
-```
+Set **`HOST_IP`** in `docker-compose.yml` to this machine’s **LAN** address (the IP phones and the display use to reach the server). That is required with port-mapped Docker (macOS, Windows, and typical Linux setups). The checked-in value is only an example; replace it with yours.
 
 Find your LAN IP:
 
-- **macOS**: System Settings → Network, or run `ipconfig getifaddr en0`
+- **macOS**: System Settings → Network, or `ipconfig getifaddr en0`
 - **Linux**: `hostname -I | awk '{print $1}'`
 
+Current compose file (customize `HOST_IP` and `env_file`):
 
+```yaml
+services:
+  referee:
+    build: .
+    image: referee:latest
+    restart: no
+    ports:
+      - 3030:3030
+    volumes:
+      - ./database:/home/app/server/db/database
+    env_file: .env.example
+    environment:
+      DOCKER_RUNNING: true
+      HOST_IP: 192.168.1.128   # replace with your LAN IP
+      FETCH_INTERVAL: 2000
+      VPORTAL_URL: bvdk
+```
 
-### 3. Start
+For production, consider `restart: unless-stopped` or `restart: always`.
+
+### 3. Start — build image locally (default)
+
+From the repo root:
 
 ```bash
 docker compose up --build
 ```
 
-Use `--build` after code changes: the image runs `npm run build` in `client/` and includes **judge token rotation on startup**. An old `referee:latest` image without that code keeps the default four-digit tokens from the database seed.
+Use **`--build`** after you pull git changes so the Dockerfile re-runs `npm run build` in `client/` and picks up server changes. The image is tagged **`referee:latest`**.
 
-Open **[http://localhost:3030](http://localhost:3030)** (or `http://<HOST_IP>:3030` from another device on the LAN).
+Open **[http://localhost:3030](http://localhost:3030)** on the host, or **`http://<HOST_IP>:3030`** from other devices on the LAN.
 
-### 4. Build from source (optional)
-
-If you prefer a local image instead of pulling from GitHub Container Registry (or you get an authorization error):
+You can build the same image without compose:
 
 ```bash
-git clone https://github.com/franknitschke/referee.git
-cd referee
 docker build -t referee:latest .
-# then set image: `referee:latest` in docker-compose.yml
-docker compose up 
 ```
+
+### 4. Start — pull pre-built image from GHCR
+
+To run a published image instead of building from source, edit `docker-compose.yml`:
+
+1. Remove the **`build: .`** line.
+2. Set **`image: ghcr.io/franknitschke/referee:latest`** (keep or drop the local `referee:latest` name; compose only needs one `image` key).
+
+Then:
+
+```bash
+docker compose pull
+docker compose up
+```
+
+If `pull` fails with an authorization error, log in to GitHub Container Registry (`docker login ghcr.io`) or build locally (section 3).
 
 ---
 
@@ -315,7 +321,7 @@ HOST_IP=192.168.1.10 npm start
 
 ## Environment variables
 
-All variables are optional unless noted. Set them in `docker-compose.yml`, a shell export, or a `.env` file (not committed to git).
+All variables are optional unless noted. Set them in `docker-compose.yml` (`environment:` block), via **`env_file`** in compose (see `.env.example`), a shell export, or a private `.env` file (not committed to git).
 
 
 | Variable         | Default                          | Description                                                                                                                                                                                                                   |
@@ -440,7 +446,7 @@ Overview of frameworks and where logic lives. The project is a **monorepo**: a R
 ```
 referee/
 ├── Dockerfile              # Multi-stage: install deps, copy app, run server
-├── docker-compose.yml      # Example compose file (customize HOST_IP, SECRET, etc.)
+├── docker-compose.yml      # Default: local build + port 3030; customize HOST_IP, env_file
 ├── client/                 # React frontend (TypeScript)
 │   ├── public/             # Static assets (favicon, manifest)
 │   ├── src/
